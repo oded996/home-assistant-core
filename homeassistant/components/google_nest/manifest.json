@@ -1,0 +1,14 @@
+{
+  "domain": "google_nest",
+  "name": "Google Nest Device Access",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/google_nest",
+  "requirements": ["google-nest-sdm==0.0.1"],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@allenporter"
+  ]
+}
