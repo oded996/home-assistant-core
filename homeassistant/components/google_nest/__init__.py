@@ -1,6 +1,7 @@
 """The Google Nest Device Access integration."""
 import asyncio
 
+from google_nest_sdm.google_nest_api import GoogleNestAPI
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,7 +14,7 @@ from homeassistant.helpers import (
 )
 
 from . import api, config_flow
-from .const import API_URL, DOMAIN, OAUTH2_AUTHORIZE, OAUTH2_TOKEN
+from .const import API_URL, DEVICES, DOMAIN, OAUTH2_AUTHORIZE, OAUTH2_TOKEN
 
 CONF_PROJECT_ID = "project_id"
 
@@ -30,8 +31,8 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-# TODO: Can also likely support "camera", "sensor", "binary_sensor"
-PLATFORMS = ["climate"]
+# TODO: Can also likely support "camera", "climate", "binary_sensor"
+PLATFORMS = ["sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -67,11 +68,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     session = config_entry_oauth2_flow.OAuth2Session(hass, entry, implementation)
     project_id = hass.data[DOMAIN][CONF_PROJECT_ID]
-    hass.data[DOMAIN][entry.entry_id] = api.AsyncConfigEntryAuth(
+    auth = api.AsyncConfigEntryAuth(
         aiohttp_client.async_get_clientsession(hass),
         session,
         API_URL.format(project_id=project_id),
     )
+    hass.data[DOMAIN][entry.entry_id] = auth
+
+    nest_api = GoogleNestAPI(auth)
+    devices = await nest_api.async_get_devices()
+    hass.data[DOMAIN][DEVICES] = devices
 
     for component in PLATFORMS:
         hass.async_create_task(
