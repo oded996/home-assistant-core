@@ -30,8 +30,8 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-# TODO: Can also likely support "camera", "sensor", "binary_sensor"
-PLATFORMS = ["climate"]
+# TODO: Can also likely support "camera", "climate", "binary_sensor"
+PLATFORMS = ["sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
