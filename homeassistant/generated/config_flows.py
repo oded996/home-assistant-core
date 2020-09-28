@@ -70,6 +70,7 @@ FLOWS = [
     "glances",
     "goalzero",
     "gogogate2",
+    "google_nest",
     "gpslogger",
     "griddy",
     "guardian",
