@@ -1,11 +1,25 @@
 """Support for Google Nest SDM sensors."""
 
+from datetime import timedelta
+import logging
+from typing import Optional
+
+import async_timeout
+from google_nest_sdm.device import Device, InfoMixin, TemperatureMixin
+from google_nest_sdm.google_nest_api import GoogleNestAPI
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import TEMP_CELSIUS
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 
-from .const import DEVICES, DOMAIN
+from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -13,38 +27,91 @@ async def async_setup_entry(
 ) -> None:
     """Set up the sensors."""
 
+    auth = hass.data[DOMAIN][entry.entry_id]
+    nest_api = GoogleNestAPI(auth)
+
+    async def async_update_data():
+        """Fetch data from API endpoint.
+
+        This is the place to pre-process the data to lookup tables
+        so entities can quickly look up their data.
+        """
+        try:
+            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
+            # handled by the data update coordinator.
+            async with async_timeout.timeout(10):
+                return await nest_api.async_get_devices()
+        # TODO: update to use api specific error messages
+        except Exception as err:
+            raise UpdateFailed(f"Error communicating with API: {err}")
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        # Name of the data. For logging purposes.
+        name="google_nest",
+        update_method=async_update_data,
+        # Polling interval. Will only be polled if there are subscribers.
+        # TODO: Make poll interval configurable?
+        update_interval=timedelta(seconds=30),
+    )
+
+    # Fetch initial data so we have data when entities subscribe
+    await coordinator.async_refresh()
+
     entities = []
-    for device in hass.data[DOMAIN][DEVICES]:
-        entities.append(ExampleSensor(device.type))
+    for idx, device in enumerate(coordinator.data):
+        #      if device.has_trait(TemperatureMixin.HUMIDITY):
+        #        entities.append(TemperatureSensor(device))
+        if device.has_trait(TemperatureMixin.NAME):
+            entities.append(TemperatureSensor(coordinator, idx))
     async_add_entities(entities)
 
 
-class ExampleSensor(Entity):
+class TemperatureSensor(CoordinatorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, name):
+    def __init__(self, coordinator: DataUpdateCoordinator, idx: int):
         """Initialize the sensor."""
-        self._state = None
-        self._name = name
+        super().__init__(coordinator)
+        self._idx = idx
+
+    @property
+    def _device(self) -> Device:
+        """Return the latest device state from the coordinator."""
+        return self.coordinator.data[self._idx]
+
+    @property
+    def unique_id(self) -> Optional[str]:
+        """Return a unique ID."""
+        # The API returns the identifier under the name field.
+        return f"{self._device.name}-temperature"
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return self._name
+        if self._device.has_trait(InfoMixin.NAME) and self._device.custom_name:
+            return self._device.custom_name
+        # TODO: Include room here
+        return self.unique_id
 
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._state
+        return self._device.ambient_temperature_celsius
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return TEMP_CELSIUS
 
-    def update(self):
-        """Fetch new state data for the sensor.
-
-        This is the only method that should fetch new data for Home Assistant.
-        """
-        self._state = 23
+    @property
+    def device_info(self):
+        """Return device specific attributes."""
+        return {
+            "identifiers": {(DOMAIN, self._device.name)},
+            "name": self.name,
+            "manufacturer": "Unknown",
+            "model": self._device.type,
+            # TODO: Include room here
+        }

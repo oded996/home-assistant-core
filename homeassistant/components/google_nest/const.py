@@ -10,5 +10,3 @@ OAUTH2_TOKEN = "https://www.googleapis.com/oauth2/v4/token"
 SDM_SCOPES = ["https://www.googleapis.com/auth/sdm.service"]
 
 API_URL = "https://smartdevicemanagement.googleapis.com/v1/enterprises/{project_id}"
-
-DEVICES = "devices"
