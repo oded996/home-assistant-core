@@ -90,8 +90,19 @@ class TemperatureSensor(CoordinatorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
+        return f"{self.device_name} Temperature"
+
+    @property
+    def device_name(self):
+        """Return the name of the sensor."""
         if self._device.has_trait(InfoMixin.NAME) and self._device.custom_name:
             return self._device.custom_name
+        # Build a name from the room/structure
+        parent_relations = self._device.parent_relations
+        if parent_relations:
+            items = sorted(parent_relations.items())
+            names = [name for id, name in items]
+            return " ".join(names)
         # TODO: Include room here
         return self.unique_id
 
@@ -110,7 +121,7 @@ class TemperatureSensor(CoordinatorEntity):
         """Return device specific attributes."""
         return {
             "identifiers": {(DOMAIN, self._device.name)},
-            "name": self.name,
+            "name": self.device_name,
             "manufacturer": "Unknown",
             "model": self._device.type,
             # TODO: Include room here
