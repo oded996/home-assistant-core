@@ -349,7 +349,7 @@ google-api-python-client==1.6.4
 google-cloud-pubsub==0.39.1
 
 # homeassistant.components.google_nest
-google-nest-sdm==0.0.1
+google-nest-sdm==0.1.1
 
 # homeassistant.components.griddy
 griddypower==0.1.0
