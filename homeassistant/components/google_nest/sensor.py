@@ -51,7 +51,7 @@ async def async_setup_entry(
         update_interval=timedelta(seconds=POLLING_INTERVAL_SEC),
     )
 
-    # Fetch initial data so we have data when entities subscribe
+    # Fetch initial data so we have data when entities subscribe.
     await coordinator.async_refresh()
 
     entities = []
@@ -87,15 +87,13 @@ class SensorBase(CoordinatorEntity):
         """Return the name of the physical device that includes the sensor."""
         if self._device.has_trait(InfoMixin.NAME) and self._device.custom_name:
             return self._device.custom_name
-        # Build a name from the room/structure
-        # Note: This room/structure name is not currently associated with
-        # a home assistant Area.
+        # Build a name from the room/structure.  Note: This room/structure name
+        # is not associated with a home assistant Area.
         parent_relations = self._device.parent_relations
         if parent_relations:
             items = sorted(parent_relations.items())
             names = [name for id, name in items]
             return " ".join(names)
-        # TODO: Include room here
         return self.unique_id
 
     @property
