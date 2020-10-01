@@ -1,4 +1,5 @@
 """Config flow for Google Nest Device Access."""
+
 import logging
 from typing import Dict
 
@@ -17,7 +18,6 @@ class OAuth2FlowHandler(
 
     DOMAIN = DOMAIN
     VERSION = 1
-    # TODO: Investigate options for using cloud pubsub to get events pushed
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     @property

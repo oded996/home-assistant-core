@@ -1,4 +1,5 @@
 """The Google Nest Device Access integration."""
+
 import asyncio
 
 import voluptuous as vol
@@ -30,7 +31,6 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-# TODO: Can also likely support "camera", "climate", "binary_sensor"
 PLATFORMS = ["sensor"]
 
 
