@@ -30,5 +30,7 @@ class OAuth2FlowHandler(
         """Extra data that needs to be appended to the authorize url."""
         return {
             "scope": ",".join(SDM_SCOPES),
+            # Add params to ensure we get back a refresh token
             "access_type": "offline",
+            "prompt": "consent",
         }
