@@ -9,7 +9,12 @@ from google_nest_sdm.device import Device, HumidityMixin, InfoMixin, Temperature
 from google_nest_sdm.google_nest_api import GoogleNestAPI
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, TEMP_CELSIUS
+from homeassistant.const import (
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_TEMPERATURE,
+    PERCENTAGE,
+    TEMP_CELSIUS,
+)
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -82,11 +87,19 @@ class SensorBase(CoordinatorEntity):
         return self.coordinator.data[self._idx]
 
     @property
+    def unique_id(self) -> Optional[str]:
+        """Return a unique ID."""
+        # The API "name" field is a unique device identifier.
+        return f"{self._device.name}-{self.device_class}"
+
+    @property
     def device_name(self):
         """Return the name of the physical device that includes the sensor."""
         if self._device.has_trait(InfoMixin.NAME) and self._device.custom_name:
             return self._device.custom_name
         # Build a name from the room/structure
+        # Note: This room/structure name is not currently associated with
+        # a home assistant Area.
         parent_relations = self._device.parent_relations
         if parent_relations:
             items = sorted(parent_relations.items())
@@ -108,12 +121,6 @@ class TemperatureSensor(SensorBase):
     """Representation of a Temperature Sensor."""
 
     @property
-    def unique_id(self) -> Optional[str]:
-        """Return a unique ID."""
-        # The API returns the identifier under the name field.
-        return f"{self._device.name}-temperature"
-
-    @property
     def name(self):
         """Return the name of the sensor."""
         return f"{self.device_name} Temperature"
@@ -127,6 +134,11 @@ class TemperatureSensor(SensorBase):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return TEMP_CELSIUS
+
+    @property
+    def device_class(self):
+        """Return the class of this device."""
+        return DEVICE_CLASS_TEMPERATURE
 
 
 class HumiditySensor(SensorBase):
@@ -152,3 +164,8 @@ class HumiditySensor(SensorBase):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return PERCENTAGE
+
+    @property
+    def device_class(self):
+        """Return the class of this device."""
+        return DEVICE_CLASS_HUMIDITY
